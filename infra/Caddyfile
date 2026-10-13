@@ -1,0 +1,8 @@
+# Replace host with your domain. Run the Bun server bound to loopback.
+photos.example.com {
+  request_body { max_size 9MB }
+  reverse_proxy 127.0.0.1:3001
+  header Referrer-Policy no-referrer
+  header X-Content-Type-Options nosniff
+  header Strict-Transport-Security "max-age=31536000"
+}

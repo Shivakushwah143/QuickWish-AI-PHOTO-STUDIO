@@ -1,0 +1,52 @@
+{
+  "name": "quickwish-ai-photo-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "packageManager": "bun@1.4.3",
+  "scripts": {
+    "dev": "bun scripts/dev.ts",
+    "start": "bun --env-file=apps/api/.env apps/api/src/server.ts",
+    "build": "vite build --config apps/web/vite.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test tests/policy.test.ts tests/database.test.ts",
+    "test:integration": "bun --env-file=apps/api/.env test tests/integration.test.ts",
+    "test:e2e": "playwright test",
+    "db:migrate": "bun --env-file=apps/api/.env scripts/migrate.ts",
+    "db:seed": "bun --env-file=apps/api/.env scripts/seed.ts",
+    "doctor": "bun --env-file=apps/api/.env scripts/doctor.ts",
+    "setup:demo": "bun scripts/setup-demo.ts",
+    "admin:password": "bun scripts/password.ts",
+    "verify:live": "bun --env-file=apps/api/.env scripts/verify-live.ts",
+    "media:cleanup": "bun --env-file=apps/api/.env scripts/cleanup.ts",
+    "verify:cleanup": "bun --env-file=apps/api/.env scripts/cleanup-verification.ts"
+  },
+  "dependencies": {
+    "@fontsource/fraunces": "5.2.6",
+    "@fontsource/manrope": "5.2.8",
+    "cloudinary": "2.7.0",
+    "drizzle-orm": "0.44.5",
+    "hono": "4.9.8",
+    "postgres": "3.4.7",
+    "qrcode": "1.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-router-dom": "7.8.2",
+    "sharp": "0.34.3",
+    "zod": "4.1.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.9",
+    "@electric-sql/pglite-socket": "0.2.12",
+    "@playwright/test": "1.55.0",
+    "@tailwindcss/vite": "4.1.12",
+    "@types/bun": "1.2.21",
+    "@types/qrcode": "1.5.5",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "4.7.0",
+    "tailwindcss": "4.1.12",
+    "typescript": "5.9.2",
+    "vite": "6.3.5"
+  }
+}

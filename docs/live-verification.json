@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-10-12T11:31:44.865Z",
+  "results": [
+    {
+      "check": "Neon connection / migration",
+      "status": "FAIL",
+      "detail": "Connection or schema query failed; inspect connectivity and configured credentials locally."
+    },
+    {
+      "check": "Groq generation",
+      "status": "PASS",
+      "detail": "HTTP 200; nonempty completion checked."
+    },
+    {
+      "check": "Cloudinary authenticated upload",
+      "status": "PASS",
+      "detail": "Uploaded a generated 256px color fixture (no customer photo)."
+    },
+    {
+      "check": "Cloudinary authorized delivery",
+      "status": "PASS",
+      "detail": "Fetched authenticated bytes via server-only signed download."
+    },
+    {
+      "check": "Cloudinary unsigned original",
+      "status": "PASS",
+      "detail": "HTTP 401; expected denial."
+    },
+    {
+      "check": "Cloudinary unsigned transformation",
+      "status": "PASS",
+      "detail": "HTTP 401; expected denial."
+    },
+    {
+      "check": "Cloudinary fixture cleanup",
+      "status": "FAIL",
+      "detail": "Temporary integration asset could not be deleted. Check quickwish/private in the account."
+    }
+  ],
+  "resumedVerification": {
+    "checkedAt": "2026-10-12T17:06:02Z",
+    "neon": {
+      "status": "BLOCKED",
+      "detail": "DNS lookup retried: EAI_AGAIN (-3). Migrations could not be retried because connectivity remains unavailable."
+    },
+    "cloudinaryCleanup": {
+      "status": "PASS",
+      "detail": "Previously retained 256px fixture identified by timestamp and uniform green pixels; provider confirmed deletion.",
+      "checkedAt": "2026-10-12T17:06:02Z"
+    }
+  }
+}

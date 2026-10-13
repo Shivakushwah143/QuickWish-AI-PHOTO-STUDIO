@@ -1,0 +1,36 @@
+CREATE TABLE styles(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),slug text UNIQUE NOT NULL,title text NOT NULL,category text NOT NULL,description text NOT NULL,image_url text NOT NULL,published boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE packages(code text PRIMARY KEY,name text NOT NULL,amount integer NOT NULL CHECK(amount>0),quantity integer NOT NULL CHECK(quantity IN (1,3,5)),active boolean NOT NULL DEFAULT true);
+CREATE TABLE orders(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),code text UNIQUE NOT NULL,style_id uuid NOT NULL REFERENCES styles(id),package_code text NOT NULL REFERENCES packages(code),phone text NOT NULL,email text,amount integer NOT NULL CHECK(amount>0),quantity integer NOT NULL CHECK(quantity IN(1,3,5)),payee text NOT NULL,merchant text NOT NULL,payment text NOT NULL DEFAULT 'NOT_SUBMITTED' CHECK(payment IN('NOT_SUBMITTED','CLAIM_PENDING_REVIEW','NEEDS_INFO','DUPLICATE_FLAGGED','REJECTED','VERIFIED','REFUND_PENDING','REFUNDED','EXPIRED')),production text NOT NULL DEFAULT 'DRAFT',entitlement text NOT NULL DEFAULT 'ACTIVE' CHECK(entitlement IN('ACTIVE','REVOKED')),consent_version text NOT NULL,consented_at timestamptz NOT NULL DEFAULT now(),created_at timestamptz NOT NULL DEFAULT now(),verified_at timestamptz,create_key uuid UNIQUE NOT NULL,create_hash text NOT NULL);
+CREATE TABLE order_assets(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid REFERENCES orders(id),kind text NOT NULL CHECK(kind IN('SOURCE','UPI_PROOF','CANDIDATE')),storage_id text UNIQUE NOT NULL,format text NOT NULL,mime text NOT NULL,bytes integer NOT NULL CHECK(bytes>0),width integer NOT NULL,height integer NOT NULL,provider text NOT NULL CHECK(provider IN('LOCAL','CLOUDINARY')),delivery_type text NOT NULL DEFAULT 'authenticated' CHECK(delivery_type='authenticated'),created_at timestamptz NOT NULL DEFAULT now(),deleted_at timestamptz);
+CREATE TABLE image_slots(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid NOT NULL REFERENCES orders(id),slot_index integer NOT NULL CHECK(slot_index BETWEEN 1 AND 5),status text NOT NULL DEFAULT 'WAITING' CHECK(status IN('WAITING','GENERATING','CANDIDATE_UPLOADED','REJECTED','APPROVED')),approved_candidate_id uuid,UNIQUE(order_id,slot_index));
+CREATE TABLE output_candidates(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),slot_id uuid NOT NULL REFERENCES image_slots(id),asset_id uuid UNIQUE NOT NULL REFERENCES order_assets(id),attempt integer NOT NULL CHECK(attempt>0),status text NOT NULL DEFAULT 'QC_PENDING' CHECK(status IN('QC_PENDING','APPROVED','REJECTED')),reason text,checks jsonb NOT NULL DEFAULT '[]',created_at timestamptz NOT NULL DEFAULT now(),reviewed_at timestamptz,UNIQUE(slot_id,attempt),UNIQUE(id,slot_id));
+ALTER TABLE image_slots ADD CONSTRAINT approved_candidate_belongs_to_slot FOREIGN KEY(approved_candidate_id,id) REFERENCES output_candidates(id,slot_id);
+CREATE TABLE payment_claims(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid NOT NULL REFERENCES orders(id),utr text NOT NULL,claimed_amount integer NOT NULL CHECK(claimed_amount>0),status text NOT NULL DEFAULT 'CLAIM_PENDING_REVIEW',reason text,idem_key uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(order_id,idem_key));
+CREATE TABLE payment_verifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid UNIQUE NOT NULL REFERENCES orders(id),claim_id uuid UNIQUE NOT NULL REFERENCES payment_claims(id),reference text NOT NULL,payee text NOT NULL,amount integer NOT NULL CHECK(amount>0),observed_at timestamptz NOT NULL,note text NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(payee,reference));
+CREATE TABLE customer_access_tokens(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid NOT NULL REFERENCES orders(id),token_hash text UNIQUE NOT NULL,kind text NOT NULL CHECK(kind IN('LINK','SESSION')),expires_at timestamptz NOT NULL,revoked_at timestamptz,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE admin_sessions(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),session_hash text UNIQUE NOT NULL,password_version text NOT NULL,expires_at timestamptz NOT NULL,last_seen_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE promo_redemptions(order_id uuid PRIMARY KEY REFERENCES orders(id),phone_hash text UNIQUE NOT NULL,redeemed_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE promo_reservations(order_id uuid PRIMARY KEY REFERENCES orders(id),phone_hash text UNIQUE NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE support_cases(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid NOT NULL REFERENCES orders(id),type text NOT NULL,note text NOT NULL,status text NOT NULL DEFAULT 'OPEN',resolution text,created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE refunds(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid UNIQUE NOT NULL REFERENCES orders(id),reference text UNIQUE NOT NULL,amount integer NOT NULL,settled_at timestamptz NOT NULL,note text NOT NULL);
+CREATE TABLE audit_events(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),order_id uuid REFERENCES orders(id),actor text NOT NULL,action text NOT NULL,detail jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE wish_usage_events(day date NOT NULL DEFAULT current_date,outcome text NOT NULL,count integer NOT NULL DEFAULT 1,PRIMARY KEY(day,outcome));
+CREATE TABLE rate_limits(bucket text PRIMARY KEY,hits integer NOT NULL,expires_at timestamptz NOT NULL);
+CREATE TABLE demo_ledger(reference text PRIMARY KEY,order_id uuid UNIQUE NOT NULL REFERENCES orders(id),amount integer NOT NULL,payee text NOT NULL);
+CREATE INDEX order_queue ON orders(payment,created_at);
+CREATE INDEX assets_order ON order_assets(order_id);
+CREATE INDEX claims_queue ON payment_claims(status,created_at);
+CREATE INDEX claims_utr ON payment_claims(utr);
+CREATE INDEX tokens_order ON customer_access_tokens(order_id);
+CREATE INDEX audits_order ON audit_events(order_id,created_at);
+CREATE INDEX cases_order ON support_cases(order_id);
+CREATE FUNCTION quickwish_slot_guard() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF NEW.slot_index > (SELECT quantity FROM orders WHERE id=NEW.order_id) THEN RAISE EXCEPTION 'slot out of bounds'; END IF;
+ IF NEW.status='APPROVED' AND (NEW.approved_candidate_id IS NULL OR NOT EXISTS(SELECT 1 FROM orders o JOIN output_candidates c ON c.id=NEW.approved_candidate_id WHERE o.id=NEW.order_id AND o.payment='VERIFIED' AND o.entitlement='ACTIVE' AND c.slot_id=NEW.id AND c.status='APPROVED')) THEN RAISE EXCEPTION 'approval invariant'; END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER slot_guard BEFORE INSERT OR UPDATE ON image_slots FOR EACH ROW EXECUTE FUNCTION quickwish_slot_guard();
+CREATE FUNCTION quickwish_immutable() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'append-only record'; END $$;
+CREATE TRIGGER verification_immutable BEFORE UPDATE OR DELETE ON payment_verifications FOR EACH ROW EXECUTE FUNCTION quickwish_immutable();
+CREATE TRIGGER audit_immutable BEFORE UPDATE OR DELETE ON audit_events FOR EACH ROW EXECUTE FUNCTION quickwish_immutable();

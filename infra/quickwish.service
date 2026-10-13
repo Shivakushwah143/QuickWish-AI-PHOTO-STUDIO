@@ -1,0 +1,14 @@
+[Unit]
+Description=QuickWish Studio
+After=network-online.target
+[Service]
+User=quickwish
+WorkingDirectory=/opt/quickwish
+ExecStart=/usr/local/bin/bun --env-file=apps/api/.env apps/api/src/server.ts
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+[Install]
+WantedBy=multi-user.target
