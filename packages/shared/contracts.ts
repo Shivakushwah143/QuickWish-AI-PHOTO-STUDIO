@@ -8,6 +8,8 @@ export const reviewInput=z.object({decision:z.enum(['APPROVED','REJECTED']),reas
 export const caseInput=z.object({type:z.enum(['SUPPORT','REVISION','REFUND','ACCESS']),note:z.string().trim().min(5).max(2000)});
 export const refundInput=z.object({reference:z.string().trim().min(6).max(64),amount:z.number().int().positive(),settledAt:z.iso.datetime(),note:z.string().trim().min(10).max(1000),settlementConfirmed:z.literal(true)});
 export const styleInput=z.object({slug:z.string().regex(/^[a-z0-9-]{3,60}$/),title:z.string().trim().min(3).max(80),category:z.string().trim().min(3).max(40),description:z.string().trim().min(10).max(500),published:z.boolean(),rightsConfirmed:z.literal(true)});
+export const categoryInput=z.object({slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(3).max(80),name:z.string().trim().min(2).max(80),description:z.string().trim().min(10).max(600),coverImageUrl:z.string().trim().min(1).max(500).optional(),imageAlt:z.string().trim().min(10).max(240),displayOrder:z.number().int().min(0).max(10000),published:z.boolean()});
+export const styleAdminInput=styleInput.extend({categoryId:z.uuid(),imageUrl:z.string().trim().min(1).max(500).optional()});
 export function normalizeReference(v:string){return v.replace(/[ -]/g,'').toUpperCase()}
 export function mayDownload(payment:string,slot:string,entitlement:string,authorized:boolean){return payment==='VERIFIED'&&slot==='APPROVED'&&entitlement==='ACTIVE'&&authorized}
 export function productionStatus(statuses:string[]){const n=statuses.filter(x=>x==='APPROVED').length;return n===statuses.length?'READY':n>0?'PARTIALLY_READY':statuses.includes('CANDIDATE_UPLOADED')?'QC_PENDING':statuses.includes('REJECTED')?'REVISION_REQUIRED':statuses.includes('GENERATING')?'IN_PROGRESS':'QUEUED'}
