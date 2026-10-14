@@ -10,7 +10,16 @@ export const refundInput=z.object({reference:z.string().trim().min(6).max(64),am
 export const styleInput=z.object({slug:z.string().regex(/^[a-z0-9-]{3,60}$/),title:z.string().trim().min(3).max(80),category:z.string().trim().min(3).max(40),description:z.string().trim().min(10).max(500),published:z.boolean(),rightsConfirmed:z.literal(true)});
 export const categoryInput=z.object({slug:z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(3).max(80),name:z.string().trim().min(2).max(80),description:z.string().trim().min(10).max(600),coverImageUrl:z.string().trim().min(1).max(500).optional(),imageAlt:z.string().trim().min(10).max(240),displayOrder:z.number().int().min(0).max(10000),published:z.boolean()});
 export const styleAdminInput=styleInput.extend({categoryId:z.uuid(),imageUrl:z.string().trim().min(1).max(500).optional()});
+export const enquiryInput=z.object({styleId:z.uuid(),packageCode:z.enum(['INTRO','SINGLE','TRIO','FIVE']),name:z.string().trim().min(2).max(80),phone:z.string().regex(/^\+?[1-9]\d{9,14}$/),email:z.union([z.email(),z.literal('')]).optional(),note:z.string().trim().max(500).default(''),consent:z.literal(true),consentVersion:z.literal(consentVersion)});
 export function normalizeReference(v:string){return v.replace(/[ -]/g,'').toUpperCase()}
 export function mayDownload(payment:string,slot:string,entitlement:string,authorized:boolean){return payment==='VERIFIED'&&slot==='APPROVED'&&entitlement==='ACTIVE'&&authorized}
 export function productionStatus(statuses:string[]){const n=statuses.filter(x=>x==='APPROVED').length;return n===statuses.length?'READY':n>0?'PARTIALLY_READY':statuses.includes('CANDIDATE_UPLOADED')?'QC_PENDING':statuses.includes('REJECTED')?'REVISION_REQUIRED':statuses.includes('GENERATING')?'IN_PROGRESS':'QUEUED'}
-export function upiIntent(vpa:string,name:string,paise:number,code:string){return 'upi://pay?'+new URLSearchParams({pa:vpa,pn:name,am:(paise/100).toFixed(2),cu:'INR',tn:code,tr:code}).toString()}
+export function isValidUpiVpa(vpa:string){return /^[A-Za-z0-9.\-_]{2,256}@[A-Za-z][A-Za-z0-9.\-_]{2,64}$/.test(vpa)&&!/example|demo|placeholder/i.test(vpa)}
+export function isSafePaymentReference(code:string){return /^[A-Z0-9-]{6,40}$/.test(code)}
+export function upiIntent(vpa:string,name:string,paise:number,code:string){
+ if(!isValidUpiVpa(vpa))throw new Error('Invalid UPI merchant configuration.');
+ if(!name.trim())throw new Error('Invalid UPI merchant name.');
+ if(!Number.isInteger(paise)||paise<=0)throw new Error('Invalid UPI amount.');
+ if(!isSafePaymentReference(code))throw new Error('Invalid UPI transaction reference.');
+ return 'upi://pay?'+new URLSearchParams({pa:vpa.trim().toLowerCase(),pn:name.trim(),am:(paise/100).toFixed(2),cu:'INR',tn:'QuickWish '+code,tr:code}).toString()
+}

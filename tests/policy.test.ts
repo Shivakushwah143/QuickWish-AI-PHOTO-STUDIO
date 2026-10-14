@@ -1,5 +1,5 @@
 import {describe,test,expect} from 'bun:test';
-import {orderInput,consentVersion,claimInput,verifyInput,reviewInput,wishInput,mayDownload,productionStatus,upiIntent,normalizeReference} from '../packages/shared/contracts';
+import {orderInput,consentVersion,claimInput,verifyInput,reviewInput,wishInput,mayDownload,productionStatus,upiIntent,normalizeReference,isValidUpiVpa} from '../packages/shared/contracts';
 const valid={styleId:crypto.randomUUID(),packageCode:'SINGLE',phone:'+919876543210',consent:true,consentVersion};
 describe('AT-01/02 consent and authoritative input',()=>{
  test('explicit versioned consent required',()=>{expect(orderInput.safeParse(valid).success).toBe(true);for(const consent of [false,undefined,'true'])expect(orderInput.safeParse({...valid,consent}).success).toBe(false)});
@@ -7,7 +7,10 @@ describe('AT-01/02 consent and authoritative input',()=>{
  test('stale notice and bad contact rejected',()=>{expect(orderInput.safeParse({...valid,consentVersion:'old'}).success).toBe(false);expect(orderInput.safeParse({...valid,phone:'123'}).success).toBe(false)});
 });
 describe('AT-03/04/08 payment contracts',()=>{
- test('UPI encodes exact paise and merchant',()=>{const uri=upiIntent('store@upi','A & B',4900,'QW-TEST');const p=new URL(uri).searchParams;expect(p.get('am')).toBe('49.00');expect(p.get('pn')).toBe('A & B');expect(p.get('pa')).toBe('store@upi')});
+ test('UPI encodes exact paise, merchant and safe reference',()=>{const uri=upiIntent('STORE@UPI','A & B',4900,'QW-TEST');const p=new URL(uri).searchParams;expect(p.get('am')).toBe('49.00');expect(p.get('pn')).toBe('A & B');expect(p.get('pa')).toBe('store@upi');expect(p.get('cu')).toBe('INR');expect(p.get('tr')).toBe('QW-TEST');expect(p.get('tn')).toBe('QuickWish QW-TEST')});
+ test('UPI uses dynamic package amounts',()=>{for(const amount of [1900,4900,9900,14900])expect(new URL(upiIntent('store@upi','QuickWish',amount,'QW-'+amount)).searchParams.get('am')).toBe((amount/100).toFixed(2))});
+ test('invalid or demo merchant config is rejected',()=>{expect(isValidUpiVpa('9009917146@ptyes')).toBe(true);for(const vpa of ['demo@upi','placeholder@upi','bad-vpa','a@b'])expect(()=>upiIntent(vpa,'QuickWish',4900,'QW-TEST')).toThrow()});
+ test('unsafe payment references are rejected',()=>{expect(()=>upiIntent('store@upi','QuickWish',4900,'../../secret')).toThrow();expect(()=>upiIntent('store@upi','QuickWish',4900,'QW TEST')).toThrow()});
  test('UTR is a claim, with no entitlement fields',()=>{const x=claimInput.parse({utr:'123456789012',claimedPaise:4900,payment:'VERIFIED'});expect('payment' in x).toBe(false)});
  test('verification requires independent attestation and actual fields',()=>{expect(verifyInput.safeParse({reference:'123456'}).success).toBe(false)});
  test('bank references normalize consistently',()=>{expect(normalizeReference('ab-12 3456')).toBe('AB123456')});
