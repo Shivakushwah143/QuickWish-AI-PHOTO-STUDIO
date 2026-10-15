@@ -14,6 +14,7 @@
     "test:e2e": "playwright test",
     "db:migrate": "bun --env-file=apps/api/.env scripts/migrate.ts",
     "db:seed": "bun --env-file=apps/api/.env scripts/seed.ts",
+    "db:import:garba": "bun --env-file=apps/api/.env scripts/import-garba-styles.ts",
     "doctor": "bun --env-file=apps/api/.env scripts/doctor.ts",
     "setup:demo": "bun scripts/setup-demo.ts",
     "admin:password": "bun scripts/password.ts",

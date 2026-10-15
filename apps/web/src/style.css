@@ -79,6 +79,9 @@
 .category-grid img,.admin-gallery .panel>img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:8px;background:#e6e5d8}
 .category-grid form,.admin-gallery form{margin-block:14px}
 @media(max-width:700px){.category-grid{grid-template-columns:1fr}.category-grid .two,.admin-gallery .two{grid-template-columns:1fr;gap:0}.admin-gallery .panel>img{aspect-ratio:4/3}}
+.collection-page>.eyebrow{margin-top:38px}.garba-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:36px}.garba-grid .portrait{aspect-ratio:4/5}.collection-card .concept{background:#172b28;color:#fff}.collection-card .portrait img{object-position:center}
+@media(max-width:1050px){.garba-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.garba-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin-top:28px}.collection-page>.eyebrow{margin-top:30px}.garba-grid .card-caption{align-items:flex-start}.garba-grid .card-caption small{font-size:7px}}
 .detail-upgrade{align-items:start}
 .detail-image{display:block;width:100%;height:auto;border-radius:14px;background:#e6e5d8;border:1px solid var(--border)}
 .detail-packages{margin-block:22px}
