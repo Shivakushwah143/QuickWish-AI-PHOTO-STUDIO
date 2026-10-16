@@ -35,10 +35,10 @@ if(import.meta.main){
  try{
   const manifest=garbaStyleManifest(await readdir(GARBA_IMAGE_DIRECTORY));
   if(!manifest.length)throw new Error('No supported Garba images were found.');
-  const [category]=await sql`SELECT id,name FROM service_categories WHERE slug=${GARBA_CATEGORY_SLUG}`;
+  const [category]=await sql`SELECT id,name FROM quickwish.service_categories WHERE slug=${GARBA_CATEGORY_SLUG}`;
   if(!category)throw new Error('The Garba & Festive category is missing. Apply existing migrations and seed it first.');
   const result=await importGarbaManifest(manifest,async style=>{
-   const rows=await sql`INSERT INTO styles(slug,title,category,category_id,description,image_url,published)
+   const rows=await sql`INSERT INTO quickwish.styles(slug,title,category,category_id,description,image_url,published)
     VALUES(${style.slug},${style.title},${category.name},${category.id},${style.description},${style.imageUrl},false)
     ON CONFLICT(slug) DO NOTHING RETURNING id`;
    return rows.length===1;

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 export const consentVersion='2026-10-12-v1';
 export const orderInput=z.object({styleId:z.uuid(),packageCode:z.enum(['INTRO','SINGLE','TRIO','FIVE']),phone:z.string().regex(/^\+?[1-9]\d{9,14}$/),email:z.union([z.email(),z.literal('')]).optional(),consent:z.literal(true),consentVersion:z.literal(consentVersion)});
-export const claimInput=z.object({utr:z.string().trim().min(6).max(64).regex(/^[a-zA-Z0-9 -]+$/),claimedPaise:z.number().int().positive()});
+export const claimInput=z.object({utr:z.string().trim().min(6).max(64).regex(/^[a-zA-Z0-9 -]+$/).optional(),claimedPaise:z.number().int().positive()});
 export const verifyInput=z.object({reference:z.string().trim().min(6).max(64).regex(/^[a-zA-Z0-9 -]+$/),amount:z.number().int().positive(),payee:z.string().trim().min(3).max(100),observedAt:z.iso.datetime(),note:z.string().trim().min(10).max(1000),independentCheck:z.literal(true),eligibleBuyer:z.boolean().default(false)});
 export const wishInput=z.object({name:z.string().trim().min(1).max(60),relationship:z.string().trim().max(40).default('friend'),tone:z.enum(['Heartfelt','Funny','Poetic','Simple']).default('Heartfelt'),language:z.enum(['English','Hindi','Hinglish']).default('English')});
 export const reviewInput=z.object({decision:z.enum(['APPROVED','REJECTED']),reason:z.string().trim().min(5).max(1000),checks:z.array(z.enum(['likeness','skin','lighting','anatomy','style','artifacts','consent'])).default([])});

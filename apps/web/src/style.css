@@ -87,3 +87,21 @@
 .detail-packages{margin-block:22px}
 .detail-packages .package strong{font-variant-numeric:tabular-nums}
 @media(max-width:700px){.detail-upgrade{gap:20px}.detail-image{border-radius:10px}}
+.checkout .qr{width:min(320px,100%)}.checkout .pay-app{min-height:58px;font-size:16px;font-weight:700}.payment-steps{font-size:13px;line-height:1.7;color:#52635e}
+.checkout-grid{grid-template-columns:minmax(0,1fr) minmax(320px,.92fr);align-items:start}
+.payment-visual{min-height:390px;background:#fff}
+.checkout .qr{width:min(360px,100%)}
+.payment-summary{min-width:0}
+.payment-summary .summary-amount{font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:500;font-variant-numeric:tabular-nums}
+.finished-paying,.pending-payment,.unavailable-payment{width:100%;margin-top:20px;padding:18px;border:1px solid #d9e0d6;border-radius:10px;background:#fff}
+.finished-paying h3,.pending-payment h3{margin:4px 0 10px}
+.finished-paying p,.pending-payment p,.unavailable-payment p{color:#52635e;line-height:1.65}
+.finished-paying-trigger{display:block;margin:0 auto}
+@media(max-width:700px){
+ .checkout-grid{display:flex;flex-direction:column;gap:14px}
+ .payment-summary{order:0;width:100%}
+ .payment-visual{order:1;width:100%;min-height:280px}
+ .checkout .qr{width:min(320px,100%)}
+ .checkout .pay-app{min-height:60px;font-size:17px}
+ .finished-paying-trigger{width:100%;padding:14px}
+}
